@@ -718,25 +718,10 @@ class SpotifyAccount:
 
     async def _async_add_audio_features(self, playback_state: dict) -> dict:
         """Adds the audio_features to the current playback state."""
-        playback_state = playback_state or {}
-
-        current_item = playback_state.get("item")
-
-        if current_item is None:
-            current_item = {}
-
-        current_uri = current_item.get("uri")
-        last_uri = self.current_item["uri"]
-
-        if current_uri is None:
-            return playback_state
-
-        if current_uri != last_uri:
-            audio_features = await self.async_track_features(current_uri)
-            self.current_item["audio_features"] = audio_features
-
-        playback_state["audio_features"] = self.current_item["audio_features"]
-        return playback_state
+        # Audio features endpoint (v1/audio-features) returns 403 for most
+        # developer apps since Spotify restricted it in Nov 2024. The sensors
+        # that consumed this data are disabled, so skip the call entirely.
+        return playback_state or {}
 
     async def async_track_features(self, uri: str) -> dict:
         """Returns the track audio features."""
