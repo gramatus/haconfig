@@ -1,0 +1,22 @@
+# Personal session context (not committed)
+active-work-context/*
+!active-work-context/README.md
+
+# Claude task status log (for monitoring long-running tasks)
+claude-status.log
+
+# Claude local settings (personal permissions, not shared)
+settings.local.json
+logging-config.json
+
+# Task logging helpers
+agent-status.log
+agent-state*.json
+agent-state.json.lock
+responses/
+sessions/
+*hook-payloads/
+
+# Temporary input to Claude Code (keep README.md, ignore contents)
+input/*
+!input/README.md
