@@ -385,23 +385,23 @@ def update_shuffle_playlist(playlistid, shuffleplaylistid, consider_play_date=Tr
     # # Uncomment to log each track
     # for track in sorted_tracks:
     #     _LOGGER.info(track["name"] + ": last played " + str(track["last_played"]))
-    # For tracks that haven't been played before, add a last_played value so things gets a bit more sorted. Before doing that, do a simple shuffle on the list to add some seed into "added order" stuff
-    random.shuffle(sorted_tracks)
+    # For tracks that haven't been played before, add a last_played value so things gets a bit more sorted.
+    # Only shuffle never-played tracks (to randomize "added order"), keeping played tracks in sorted order.
+    if consider_play_date:
+        unplayed = [t for t in sorted_tracks if t["last_played"].timestamp() == 0]
+        played = [t for t in sorted_tracks if t["last_played"].timestamp() != 0]
+    else:
+        unplayed = list(sorted_tracks)
+        played = []
+    random.shuffle(unplayed)
     day_offset = 1
     one_year_ago = datetime.datetime.fromtimestamp(datetime.datetime.now().timestamp() - 365*24*60*60)
-    for track in sorted_tracks:
-        if track["last_played"].timestamp() == 0 or not consider_play_date:
-            track["last_played"] = one_year_ago - datetime.timedelta(days=day_offset)
-            # _LOGGER.debug("Last played set to: " + str(track["last_played"]))
-            day_offset = day_offset + 1
+    for track in unplayed:
+        track["last_played"] = one_year_ago - datetime.timedelta(days=day_offset)
+        day_offset = day_offset + 1
 
-    tracks_played_last_year = list(filter(lambda x: x["last_played"].timestamp() >= datetime.datetime.now().timestamp() - 365*24*60*60, sorted_tracks))
-    if not consider_play_date or len(tracks_played_last_year) == 0:
-        tracks_played_last_year = sorted_tracks
-    # if len(tracks_played_last_year) > 0:
-    lowest_last_played_datetime = min(tracks_played_last_year, key=lambda x: x["last_played"])["last_played"]
-    # else:
-    #     lowest_last_played_datetime = min(sorted_tracks, key=lambda x: x["last_played"])["last_played"]
+    sorted_tracks = sorted(played + unplayed, key=lambda i: i["last_played"], reverse=False)
+    lowest_last_played_datetime = min(sorted_tracks, key=lambda x: x["last_played"])["last_played"]
     sorted_tracks = fix_repeat_artist_album(sorted_tracks, lowest_last_played_datetime, False)
     # log.info(list(sorted_tracks)[0]["last_played"])
     # log.info(datetime.datetime.now() - datetime.timedelta(days=365))
@@ -482,7 +482,7 @@ def update_shuffle_playlist(playlistid, shuffleplaylistid, consider_play_date=Tr
         if fix_after_shuffle:
             updated_group = fix_repeat_artist_album(updated_group, lowest_last_played_datetime, False)
             _LOGGER.info("Group#" + str(group_num) + ": Updated after shuffling to avoid groupings of same artist/album")
-        for track in group:
+        for track in updated_group:
             shuffled_tracks.append(track)
         group_num = group_num + 1
 
