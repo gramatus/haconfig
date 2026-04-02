@@ -179,18 +179,18 @@ fields:
         device_on = state.get("light.hue_smart_plug_1") == "on"
         if device_on:
             log.info("Turning off Anlegg stue")
-            remote.send_command(entity_id="remote.harmony_hub_stua", device="Dantax TV DVD", command="PowerToggle")
+            # remote.send_command(entity_id="remote.harmony_hub_stua", device="Dantax TV DVD", command="PowerToggle")
             remote.send_command(entity_id="remote.harmony_hub_stua", device="Yamaha AV Receiver", command="PowerOff")
             light.turn_off(entity_id="light.hue_smart_plug_1")
-            pyscript.turn_off_hdmi_switch()
+            # pyscript.turn_off_hdmi_switch()
         else:
             log.info("Turning on Anlegg stue")
-            remote.send_command(entity_id="remote.harmony_hub_stua", device="Yamaha AV Receiver", command="PowerON")
+            remote.send_command(entity_id="remote.harmony_hub_stua", device="Yamaha AV Receiver", command="PowerOn")
             light.turn_on(entity_id="light.hue_smart_plug_1")
-            pyscript.set_hdmi_output(output="Dantax TV")
-            log.info("Waiting 10 seconds for other stuff to turn on before turning on the screen, this avoids some useless flickering")
-            task.sleep(10)
-            remote.send_command(entity_id="remote.harmony_hub_stua", device="Dantax TV DVD", command="PowerToggle")
+            # pyscript.set_hdmi_output(output="Dantax TV")
+            # log.info("Waiting 10 seconds for other stuff to turn on before turning on the screen, this avoids some useless flickering")
+            # task.sleep(10)
+            # remote.send_command(entity_id="remote.harmony_hub_stua", device="Dantax TV DVD", command="PowerToggle")
     elif receiver == "Anlegg soverom":
         device_on = state.get("remote.harmony_hub_soverom") == "on"
         if device_on:
