@@ -17,7 +17,7 @@
 # See notes/tellstick.md for information on setting this up
 - platform: tellstick
   temperature_scale: "°C"
-  # datatype_mask: 1
+  datatype_mask: 127
   only_named:
     - id: 34
       name: Kontoret
