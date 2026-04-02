@@ -44,7 +44,7 @@ state.persist("pyscript.remote_mapping","", {
     "Exit": {
         "roku_instance": "Home Assistant Pi",
         "roku_command": "Backspace",
-        "action": None
+        "action": "Gardin opp/ned stua"
     },
     "Menu": {
         "roku_instance": "Home Assistant Pi",
@@ -129,7 +129,7 @@ state.persist("pyscript.remote_mapping","", {
     "Rec": {
         "roku_instance": "Home Assistant 3",
         "roku_command": "Search",
-        "action": None
+        "action": "On/off Badet CC Switch"
     },
     "Pause": {
         "roku_instance": "Home Assistant 3",

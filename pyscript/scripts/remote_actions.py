@@ -118,8 +118,20 @@ fields:
         turnonoff_receiver("Anlegg stue")
     elif action == "Anlegg soverom av/på":
         turnonoff_receiver("Anlegg soverom")
+    elif action == "On/off Badet CC Switch":
+        chromecast_power_plug = "light.chromecast_bad"
+        light.turn_off(entity_id=chromecast_power_plug)
+        await asyncio.sleep(10)
+        light.turn_on(entity_id=chromecast_power_plug)
+    elif action == "Gardin opp/ned stua":
+        group_entity = "cover.gardiner_stua"
+        blinds_closed = state.get(group_entity) == "closed"
+        if blinds_closed:
+            cover.open_cover(entity_id=group_entity)
+        else:
+            cover.close_cover(entity_id=group_entity)
     else:
-        log-warning("Received action \"" + action + "\", but no way to handle the action has been defined")
+        log.warning("Received action \"" + action + "\", but no way to handle the action has been defined")
 
 @service
 def turnonoff_receiver(receiver):
