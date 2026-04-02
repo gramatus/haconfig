@@ -105,7 +105,13 @@ async def spotify_get(relative_url, dump_to_log=False, GetAll=True, MaxCount=100
                 elif "items" in resp_json:
                     # Probably a paged list of items
                     new_items = resp_json["items"]
-                    items = items + new_items
+                    if isinstance(new_items, list):
+                        items = items + new_items
+                    else:
+                        # If items is a dict/object, return it directly
+                        _LOGGER.debug("'items' was a dict, not a list - returning response object")
+                        has_more_data = False
+                        return resp_json
                 elif "playlists" in resp_json and "items" in resp_json["playlists"]:
                     # Probably a paged list of items
                     new_items = resp_json["playlists"]["items"]
@@ -123,7 +129,15 @@ async def spotify_get(relative_url, dump_to_log=False, GetAll=True, MaxCount=100
                 elif "tracks" in resp_json:
                     # Probably a paged list of items
                     new_items = resp_json["tracks"]
-                    items = items + new_items
+                    if isinstance(new_items, list):
+                        items = items + new_items
+                    elif isinstance(new_items, dict) and "items" in new_items:
+                        # tracks can be a dict with an items list (e.g., playlist response)
+                        items = items + new_items["items"]
+                    else:
+                        _LOGGER.debug("'tracks' was not a list or dict with 'items' - returning response object")
+                        has_more_data = False
+                        return resp_json
                 else:
                     _LOGGER.warning("No items key or uri key found, not sure what to do next")
                     _LOGGER.info("JSON from Spotify:\n" + response.text())
