@@ -65,10 +65,10 @@ async def ensure_token_valid():
     if float(token_expires) > time.time():
         return
     _LOGGER.debug("Token expired at: " + str(datetime.timedelta(seconds=token_expires - int(time.time()))) + ", will get a new token")
-    get_spotify_token()
+    await get_spotify_token()
 
 async def spotify_get(relative_url, dump_to_log=False, GetAll=True, MaxCount=1000, ReturnRaw=False, LogErrors=True):
-    ensure_token_valid()
+    await ensure_token_valid()
     full_url = "https://api.spotify.com/v1" + relative_url
 
     headers = {
@@ -151,7 +151,7 @@ async def spotify_get(relative_url, dump_to_log=False, GetAll=True, MaxCount=100
     return items
 
 async def spotify_post(relative_url, json_data, return_response=False, RetryCount=0, Attempt=1):
-    ensure_token_valid()
+    await ensure_token_valid()
     full_url = "https://api.spotify.com/v1" + relative_url
     headers = {
         "Accept": "application/json",
@@ -163,7 +163,7 @@ async def spotify_post(relative_url, json_data, return_response=False, RetryCoun
         async with session.post(encoded_url, json=json_data, allow_redirects=False, headers=headers) as response:
             if RetryCount > Attempt and response.status // 100 == 5:
                 _LOGGER.warning(" POST > Attempt " + str(Attempt) + " of " + str(RetryCount) + ": got status " + str(response.status) + ", retrying")
-                spotify_post(relative_url, json_data, return_response, RetryCount=RetryCount, Attempt=Attempt + 1)
+                await spotify_post(relative_url, json_data, return_response, RetryCount=RetryCount, Attempt=Attempt + 1)
                 return
             if response.status // 100 != 2:
                 _LOGGER.warning(" POST > " + str(encoded_url) + ": Status "+str(response.status) + ", Response from server:\n" + response.text())
@@ -178,7 +178,7 @@ async def spotify_post(relative_url, json_data, return_response=False, RetryCoun
                 return response.json()
 
 async def spotify_put(relative_url, json_data=None, return_response=False, RetryCount=0, Attempt=1):
-    ensure_token_valid()
+    await ensure_token_valid()
     full_url = "https://api.spotify.com/v1" + relative_url
     headers = {
         "Accept": "application/json",
@@ -190,7 +190,7 @@ async def spotify_put(relative_url, json_data=None, return_response=False, Retry
         async with session.put(encoded_url, json=json_data, allow_redirects=False, headers=headers) as response:
             if RetryCount > Attempt and response.status // 100 == 5:
                 _LOGGER.warning(" PUT > Attempt " + str(Attempt) + " of " + str(RetryCount) + ": got status " + str(response.status) + ", retrying")
-                spotify_put(relative_url, json_data, return_response, RetryCount=RetryCount, Attempt=Attempt + 1)
+                await spotify_put(relative_url, json_data, return_response, RetryCount=RetryCount, Attempt=Attempt + 1)
                 return
             if response.status // 100 != 2:
                 _LOGGER.warning(" PUT > " + str(encoded_url) + ": Status "+str(response.status) + ", Response from server:\n" + response.text())
@@ -205,7 +205,7 @@ async def spotify_put(relative_url, json_data=None, return_response=False, Retry
                 return response.json()
 
 async def spotify_delete(relative_url, json_data=None, log_data=False, RetryCount=0, Attempt=1):
-    ensure_token_valid()
+    await ensure_token_valid()
     full_url = "https://api.spotify.com/v1" + relative_url
     headers = {
         "Accept": "application/json",
@@ -219,7 +219,7 @@ async def spotify_delete(relative_url, json_data=None, log_data=False, RetryCoun
         async with session.delete(encoded_url, json=json_data, allow_redirects=False, headers=headers) as response:
             if RetryCount > Attempt and response.status // 100 == 5:
                 _LOGGER.warning("Attempt " + str(Attempt) + " of " + str(RetryCount) + ": got status " + str(response.status) + ", retrying")
-                spotify_delete(relative_url, json_data, log_data, RetryCount=RetryCount, Attempt=Attempt + 1)
+                await spotify_delete(relative_url, json_data, log_data, RetryCount=RetryCount, Attempt=Attempt + 1)
                 return
             if response.status // 100 != 2:
                 _LOGGER.warning(" DELETE > " + str(encoded_url) + ": Status "+str(response.status) + ", Response from server:\n" + response.text())
