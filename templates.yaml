@@ -357,3 +357,90 @@
   #   state: '{{ (states("sensor.kontoret_temperature")|float(default=20)) - (states("input_number.termostat_kontoret")|float(default=20)) }}'
   #   attributes:
   #     friendly_name: 'Test diff temperatur vs termostat'
+  # Migrated from sensors.yaml (legacy platform: template)
+  - unique_id: time_formatted
+    name: "Time Formatted"
+    icon: mdi:calendar-clock
+    state: "{{ as_timestamp(states('sensor.date_time_iso')) | timestamp_custom('%A %B %-m, %I:%M %p') }}"
+    attributes:
+      friendly_name: "Date and time"
+  - unique_id: playing_entity
+    name: "Playing Entity"
+    state: >-
+      {% set defaultEntity = "media_player.kjokkenet" %}
+      {% set inGroup = ['media_player.badet' , 'media_player.fm', 'media_player.kjokkenet', 'media_player.kontoret'] %}
+      {% set playState = "playing" %}
+      {% set group_state = states("media_player.Godehol") %}
+      {% set playingEntity = "" %}
+      {% set spotifySource = state_attr("media_player.spotify_gramatus","source") %}
+      {% if spotifySource == None %}
+        Not playing
+      {% else %}
+        {% for mediaPlayer in states.media_player %}
+          {% if playingEntity == "" and state_attr(mediaPlayer.entity_id,"friendly_name") == spotifySource %}
+            {% set playingEntity = mediaPlayer.entity_id %}
+            {{ playingEntity }}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    attributes:
+      friendly_name: "Currently active media player"
+  - unique_id: tid_til_vekking
+    name: "Tid Til Vekking"
+    icon: mdi:alarm
+    state: >-
+      {% set nowTimestamp = as_timestamp(utcnow()) - as_timestamp(strptime(as_timestamp(utcnow())|timestamp_custom('%Y-%m-%d', true),'%Y-%m-%d')) %}
+      {% set alarmTimestamp = state_attr('input_datetime.vekking', 'timestamp') %}
+      {% if nowTimestamp > alarmTimestamp %}
+      {{ ((alarmTimestamp + (60*60*24)) - nowTimestamp) | timestamp_custom('%H:%M', false) }}
+      {% else %}
+      {{ (alarmTimestamp - nowTimestamp) | timestamp_custom('%H:%M', false)}}
+      {% endif %}
+    attributes:
+      friendly_name: "Tid til vekking"
+# Migrated from binary_sensors.yaml (legacy platform: template)
+- binary_sensor:
+  - unique_id: musikk_godehol
+    name: "Musikk Godehol"
+    state: >-
+      {{ is_state('media_player.godehol', 'playing') or is_state('media_player.godehol', 'paused') }}
+  - unique_id: musikk_kontor
+    name: "Musikk Kontor"
+    state: >-
+      {{ is_state('media_player.kontoret', 'playing') or is_state('media_player.kontoret', 'paused') }}
+  - unique_id: musikk_kjokkennest
+    name: "Musikk Kjokkennest"
+    state: >-
+      {{ is_state('media_player.kjokkennest', 'playing') or is_state('media_player.kjokkennest', 'paused') }}
+  - unique_id: musikk_badet
+    name: "Musikk Badet"
+    state: >-
+      {{ is_state('media_player.badet', 'playing') or is_state('media_player.badet', 'paused') }}
+  - unique_id: musikk_fm
+    name: "Musikk Fm"
+    state: >-
+      {{ is_state('media_player.fm', 'playing') or is_state('media_player.fm', 'paused') }}
+  - unique_id: musikk_kjokken
+    name: "Musikk Kjokken"
+    state: >-
+      {{ is_state('media_player.kjokkenet', 'playing') or is_state('media_player.kjokkenet', 'paused') }}
+  - unique_id: musikk_bare_kontor
+    name: "Musikk Bare Kontor"
+    state: >-
+      {{ is_state('binary_sensor.musikk_kontor', 'on') and not is_state('binary_sensor.musikk_godehol', 'on') }}
+  - unique_id: musikk_bare_kjokkennest
+    name: "Musikk Bare Kjokkennest"
+    state: >-
+      {{ is_state('binary_sensor.musikk_kjokkennest', 'on') and not is_state('binary_sensor.musikk_godehol', 'on') }}
+  - unique_id: musikk_bare_badet
+    name: "Musikk Bare Badet"
+    state: >-
+      {{ is_state('binary_sensor.musikk_badet', 'on') and not is_state('binary_sensor.musikk_godehol', 'on') }}
+  - unique_id: musikk_bare_fm
+    name: "Musikk Bare Fm"
+    state: >-
+      {{ is_state('binary_sensor.musikk_fm', 'on') and not is_state('binary_sensor.musikk_godehol', 'on') }}
+  - unique_id: musikk_bare_kjokken
+    name: "Musikk Bare Kjokken"
+    state: >-
+      {{ is_state('binary_sensor.musikk_kjokken', 'on') and not is_state('binary_sensor.musikk_godehol', 'on') }}
