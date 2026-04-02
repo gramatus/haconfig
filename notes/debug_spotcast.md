@@ -11,7 +11,7 @@ data:
   playlistid: 6tmVPMqA41iGssO9gfDBoJ
   device: media_player.godehol
   shuffle_type: No shuffle
-  fadein_seconds: 60
+  fadein_seconds: 10
   final_volume: 1
 ```
 
@@ -21,4 +21,5 @@ action: logger.set_level
 data:
   custom_components.spotcast: debug
   spotipy: debug
+  music_assistant: debug
 ```
