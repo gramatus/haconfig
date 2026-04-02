@@ -153,11 +153,6 @@ async def spotify_get(relative_url, dump_to_log=False, GetAll=True, MaxCount=100
                     _LOGGER.debug("Reached end of paging")
                     has_more_data = False
     items = list(filter(lambda x: x != None, items)) # Sometimes the API returns some nulls in the JSON list
-    for item in items:
-        if "track" in item and "available_markets" in item["track"]:
-            item["track"]["available_markets"] = None
-            if "album" in item["track"] and "available_markets" in item["track"]["album"]:
-                item["track"]["album"]["available_markets"] = None
     if dump_to_log:
         _LOGGER.info("Items JSON from Spotify:\n" + json.dumps(items, indent=2))
     else:
@@ -351,7 +346,7 @@ def update_shuffle_playlist(playlistid, shuffleplaylistid, consider_play_date=Tr
         # Get all tracks in playlist
         _LOGGER.debug("Reading tracks from source playlist")
         # Note: we are using market here as the data in recently_played is using the uri based on market
-        items = spotify_get("/playlists/" + playlistid + "/tracks?market=NO&limit=100", False)
+        items = spotify_get("/playlists/" + playlistid + "/items?market=NO&limit=100", False)
 
         # Combine the data into an object that will be used to create the shuffled playlist
         tracks = []
@@ -373,8 +368,6 @@ def update_shuffle_playlist(playlistid, shuffleplaylistid, consider_play_date=Tr
             if debug_log:
                 _LOGGER.info(trackdata)
                 _LOGGER.info(track)
-            if "linked_from" in track:
-                trackdata["uri"] = track["linked_from"]["uri"]
             if trackdata["market_uri"] in played_tracks_uri:
                 trackdata["last_played"] = played_tracks_uri[trackdata["market_uri"]]["last_played"]
             elif trackdata["track_identifier"] in played_tracks_identifier:
@@ -515,12 +508,12 @@ def update_shuffle_playlist(playlistid, shuffleplaylistid, consider_play_date=Tr
         uris.append(track["uri"])
         if len(uris) >= batch_size:
             _LOGGER.debug("Will post " + str(len(uris)) + " uris to /playlists/" + shuffleplaylistid + "/tracks")
-            spotify_post("/playlists/" + shuffleplaylistid + "/tracks", {"uris": uris}, RetryCount=3)
+            spotify_post("/playlists/" + shuffleplaylistid + "/items", {"uris": uris}, RetryCount=3)
             uris = []
     # Handle the last batch
     if len(uris) > 0:
         _LOGGER.debug("Will post " + str(len(uris)) + " uris to /playlists/" + shuffleplaylistid + "/tracks")
-        spotify_post("/playlists/" + shuffleplaylistid + "/tracks", {"uris": uris}, RetryCount=3)
+        spotify_post("/playlists/" + shuffleplaylistid + "/items", {"uris": uris}, RetryCount=3)
     _LOGGER.debug("DONE! Shadow playlist has been updated")
 
 def truncate_playlist(playlistid, iteration = 1):
@@ -537,7 +530,7 @@ def truncate_playlist(playlistid, iteration = 1):
     # Get all tracks in playlist
     _LOGGER.debug(" > Getting all tracks (so we can tell Spotify to delete them)")
     # Note: we are NOT using market here as we want the actual URI stored in the playlist
-    items = spotify_get("/playlists/" + playlistid + "/tracks?limit=100", False)
+    items = spotify_get("/playlists/" + playlistid + "/items?limit=100", False)
     uris = []
     batch_size = 50
     _LOGGER.debug(" > Deleting all tracks in batches of " + str(batch_size))
@@ -546,18 +539,18 @@ def truncate_playlist(playlistid, iteration = 1):
         uris.append({ "uri": track["uri"] })
         if len(uris) >= batch_size:
             _LOGGER.debug("Will delete " + str(len(uris)) + " uris from /playlists/" + playlistid + "/tracks")
-            spotify_delete("/playlists/" + playlistid + "/tracks", {"tracks": uris}, RetryCount=3)
+            spotify_delete("/playlists/" + playlistid + "/items", {"items": uris}, RetryCount=3)
             uris = []
     # Handle the last group
     if len(uris) > 0:
         _LOGGER.debug("Will delete " + str(len(uris)) + " uris from /playlists/" + playlistid + "/tracks")
-        spotify_delete("/playlists/" + playlistid + "/tracks", {"tracks": uris}, RetryCount=3)
+        spotify_delete("/playlists/" + playlistid + "/items", {"items": uris}, RetryCount=3)
     # Retry a few times if some delete operations failed
     max_retries = 5
     if(iteration > max_retries):
         _LOGGER.warning("Reached " + str(max_retries) + " retries, giving up on fully truncating the playlist")
         return
-    items = spotify_get("/playlists/" + playlistid + "/tracks?limit=100", False, LogErrors=False)
+    items = spotify_get("/playlists/" + playlistid + "/items?limit=100", False, LogErrors=False)
     if items != None and len(items) > 0:
         _LOGGER.warn("Not all tracks deleted after iteration #" + str(iteration))
         truncate_playlist(playlistid, iteration + 1)
@@ -592,7 +585,7 @@ def ensure_shuffle_playlist_exists(playlistid):
          "description": "Skyggespilleliste for shuffling med min manuelle algoritme",
          "public": False
     }
-    shuffle_playlist = spotify_post("/users/" + spotify_username + "/playlists", playlist_data, True)
+    shuffle_playlist = spotify_post("/me/playlists", playlist_data, True)
     _LOGGER.info(" > Created shuffle playlist with ID: \"" + shuffle_playlist["id"] + "\"")
     state.setattr("pyscript.spotify_shuffle_playlists." + playlisturi, {
         "name": playlistname,
