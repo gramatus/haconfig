@@ -7,10 +7,10 @@ def getMediaPlaySortKey(mediaPlayer, castDict):
     return ""
 
 def getPlayingEntity(lookfor="both"):
-    castDevices = state.getattr("sensor.chromecast_devices")["devices"]
-    castDict = {}
-    for device in castDevices:
-        castDict[device["name"]] = { "is_group": device["model_name"] == "Google Cast Group" }
+    # castDevices = state.getattr("sensor.chromecast_devices")["devices"]
+    # castDict = {}
+    # for device in castDevices:
+    #     castDict[device["name"]] = { "is_group": device["model_name"] == "Google Cast Group" }
     allMediaPlayers = []
     massMediaPlayers = []
     use_spotcast = state.get("input_boolean.use_spotcast") == "on"
@@ -18,7 +18,7 @@ def getPlayingEntity(lookfor="both"):
         player = state.getattr(mediaPlayerName)
         if "friendly_name" in player:
             deviceName = state.getattr(mediaPlayerName)["friendly_name"]
-            is_group = (deviceName in castDict and castDict[deviceName]["is_group"]) or deviceName == "Godehol"
+            is_group = deviceName == "Godehol" # or (deviceName in castDict and castDict[deviceName]["is_group"])
             sort_key = "0" + deviceName if is_group else "1" + deviceName
             # use_spotcast
             if use_spotcast and "mass_" in mediaPlayerName:
