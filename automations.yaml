@@ -113,7 +113,8 @@
   mode: restart
 - id: '1631038106031'
   alias: 'Vekking: restart hvis musikken ikke er på'
-  description: ''
+  description: Deaktivert 1) fordi jeg mener pyscript.ensure_alarm_active gjør samme
+    jobben, og 2) fordi den stadig slår inn når den ikke skal
   trigger:
   - platform: time_pattern
     minutes: /5
