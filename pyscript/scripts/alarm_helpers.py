@@ -112,7 +112,7 @@ description: Set HVAC night settings, lower blinds and turn off lights after one
     log.info("Wait 16 seconds for cover to close")
     await asyncio.sleep(16)
     log.info("Turning on lights temporarily, with a 10 second transition")
-    light.turn_on(entity_id="light.soverom",transition=10,kelvin=2000,brightness=30)
+    light.turn_on(entity_id="light.soverom",transition=10,color_temp_kelvin=2000,brightness=30)
     log.info("Setting HVAC settings")
     melcloud.set_vane_vertical(entity_id="climate.soverom",position="auto")
     climate.set_temperature(entity_id="climate.soverom",temperature=input_number.temperatur_soverom_natt)
