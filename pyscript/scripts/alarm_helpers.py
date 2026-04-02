@@ -227,35 +227,70 @@ def ensure_alarm_active():
     """yaml
 name: Ensure that the alarm actually started as expected
 """
-    check_interval = 120
+    check_interval = 300
     need_to_check_alarm = True
     log.info("Started script to ensure that wakeup plays music as expected")
+    # Run the while loop until the alarm is actually on
     while need_to_check_alarm:
+        log.info("New iteration in ensure_alarm_active()")
+        await asyncio.sleep(check_interval)
+        log.info("Finished waiting, running check")
         wakeup_active = state.get("input_boolean.vekking_pagar") == "on"
-        if not wakeup_active:
+        is_away = state.get("input_boolean.bortreist") == "on"
+        if not wakeup_active or is_away:
             log.info("Wakeup is not active, will not do anything")
             need_to_check_alarm = False
             break
-        asyncio.sleep(check_interval)
-        # Check that music is playing
+
+        # Define involved devices
         target_device = "media_player.godehol"
+        bedroom_device = "media_player.soverom"
+        chromecast_power_plug = "light.chromecast_soverom"
+
+        # Check that music is playing
         alarm_start = state.getattr("input_datetime.vekking")["timestamp"] + state.getattr("input_datetime.wakeup_music_delay")["timestamp"]
         midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).astimezone()
         time_since_wakeup = datetime.datetime.now().timestamp() - (alarm_start + midnight.timestamp())
-        if time_since_wakeup > 5*60:
-            target_device = "media_player.soverom"
-        cast_playback_active = state.get(target_device) == "playing"
-        spotify_playback_active = state.get("media_player.spotify_gramatus") == "playing"
+        minutes_since_wakeup = round(time_since_wakeup/60, 1)
+        log.info("Time since wakeup: " + str(minutes_since_wakeup) + " minutes")
 
-        mass_device = target_device.replace("media_player.","media_player.mass_")
-        mass_playback_active = state.get(mass_device) == "playing"
-        log.info("Status of " + mass_device + " is " + str(mass_playback_active) + ", that is " + state.get(mass_device))
-        if not mass_playback_active:
-            asyncio.sleep(5) # This sometimes fails, but it should be back in a few seconds
+        use_spotcast = state.get("input_boolean.use_spotcast") == "on"
+
+        # First fix: If not playing on soverom after 5 minutes, and the smart plug powering the chromecastdevice has been on for more than 15 minutes, try turning that off and then on again
+        bedroom_playback_active = False
+        if use_spotcast:
+            bedroom_playback_active = state.get(bedroom_device) == "playing"
+        else:
+            mass_device = bedroom_device.replace("media_player.","media_player.mass_")
+            bedroom_playback_active = state.get(mass_device) == "playing"
+        cc_time_since_turnon = (datetime.datetime.now().astimezone() - state.get(chromecast_power_plug + ".last_changed")).total_seconds()
+        if not bedroom_playback_active and time_since_wakeup > 5*60 and cc_time_since_turnon > 15*60:
+            log.warning("Alarm not playing on bedroom CC after " + str(minutes_since_wakeup) + " minutes, trying to restart chromecast device (by turning power off/on)")
+            light.turn_off(entity_id=chromecast_power_plug)
+            await asyncio.sleep(10)
+            light.turn_on(entity_id=chromecast_power_plug)
+
+        # Second fix: Change target media player to bedroom if Godehol does not work after 10 minutes
+        if time_since_wakeup > 10*60:
+            target_device = bedroom_device
+            log.warning("Alarm not running on Godehol after " + str(minutes_since_wakeup) + " minutes. Changing target device to " + target_device + ", in case the trouble is in the cast group")
+
+        alarm_ok = False
+        if use_spotcast:
+            cast_playback_active = state.get(target_device) == "playing"
+            spotify_playback_active = state.get("media_player.spotify_gramatus") == "playing"
+            alarm_ok = cast_playback_active and spotify_playback_active
+        else:
+            mass_device = target_device.replace("media_player.","media_player.mass_")
             mass_playback_active = state.get(mass_device) == "playing"
-            log.info("Status of " + mass_device + " after 5 more seconds is " + str(mass_playback_active) + ", that is " + state.get(mass_device))
+            log.info("Status of " + mass_device + " is " + str(mass_playback_active) + ", that is " + state.get(mass_device))
+            if not mass_playback_active:
+                await asyncio.sleep(5) # This sometimes fails, but it should be back in a few seconds
+                mass_playback_active = state.get(mass_device) == "playing"
+                log.info("Status of " + mass_device + " after 5 more seconds is " + str(mass_playback_active) + ", that is " + state.get(mass_device))
+            alarm_ok = mass_playback_active
 
-        if mass_playback_active or (cast_playback_active and spotify_playback_active):
+        if alarm_ok:
             log.info("Confirmed alarm is at expected state")
             need_to_check_alarm = False
             # Check that volume is not too silent (e.g. after a crash when volume was just set to 0)
@@ -265,35 +300,22 @@ name: Ensure that the alarm actually started as expected
                 if volume >= 0.5:
                     log.info("Volume is: " + str(volume) + " no need to do anything")
                 else:
-                    log.info("Volume seems to be too low (" + str(volume) + "), increasing volume to 50 %")
-                    volume_increase(30, target_device, final_volume = 0.5)
+                    log.info("Volume seems to be too low (" + str(volume) + "), increasing volume to 60 %")
+                    volume_increase(30, target_device, final_volume = 0.6)
             except:
                 log.info("Could not get volume")
             break
-        minutes_since_wakeup = round(time_since_wakeup/60, 1)
-        # ha_uptime_seconds = datetime.datetime.now().timestamp() - datetime.datetime.strptime(state.get("sensor.oppetid_ha"), "%Y-%m-%dT%H:%M:%S.%f%z").timestamp()
-        chromecast_power_plug = "device_not_yet_configured"
-        # cc_time_since_turnon = (state.get(chromecast_power_plug + ".last_changed") - midnight).total_seconds()
-        cc_time_since_turnon = 5*60 # Until I actually have a plug to use...
-        # If not ok after 15 minutes, and HA has been up for more than 60 minutes, try restaring HA
-        # if time_since_wakeup > 15*60 and ha_uptime_seconds > 60*60:
-        #     log.warning("Alarm still not running as expected after " + str(minutes_since_wakeup) + " minutes, restarting home assistant to see if that helps (HA uptime: " + str(datetime.timedelta(seconds=ha_uptime_seconds)) + ")")
-        #     homeassistant.restart()
-        # If not ok after 10 minutes, and the smart plug powering the chromecastdevice has been on for more than 60 minutes, try turning that off and then on again
-        if time_since_wakeup > 10*60 and cc_time_since_turnon > 60*60:
-            log.warning("Alarm still not running as expected after " + str(minutes_since_wakeup) + " minutes, trying to restart chromecast device (by turning power off/on)")
-            #light.turn_off(chromecast_power_plug)
-            # await asyncio.sleep(15)
-            #light.turn_on(chromecast_power_plug)
-            log.info("Turning CC off/on not yet implemented - smart plug currently not acquired")
+
+        # Third fix: If not ok after 15 minutes, and HA has been up for more than 60 minutes, try restaring HA
+        ha_uptime_seconds = datetime.datetime.now().timestamp() - datetime.datetime.strptime(state.get("sensor.oppetid_ha"), "%Y-%m-%dT%H:%M:%S%z").timestamp()
+        log.info("Uptime: " + str(ha_uptime_seconds))
+        if time_since_wakeup > 15*60 and ha_uptime_seconds > 60*60:
+            log.warning("Alarm still not running as expected after " + str(minutes_since_wakeup) + " minutes, restarting home assistant to see if that helps (HA uptime: " + str(datetime.timedelta(seconds=ha_uptime_seconds)) + ")")
+            homeassistant.restart()
         else:
-            # Change target media player to bedroom if Godehol does not work after 5 minutes
-            if time_since_wakeup > 5*60:
-                log.warning("Alarm still not running as expected after " + str(minutes_since_wakeup) + " minutes, trying to connect to " + target_device + ", in case the trouble is in the cast group and then rerunning wakeup routine")
-            else:
-                log.warning("Alarm still not running as expected after " + str(minutes_since_wakeup) + " minutes, trying to rerun wakeup routine")
+            log.warning("Alarm not running as expected, trying to rerun wakeup routine.")
             pyscript.wakeup_alarm(device=target_device)
-    log.info("Finished ensure alarm script")
+    log.info("Broken out of while loop, finished ensure alarm script")
 
 @service
 async def set_wakeup_playlist(playlist):
