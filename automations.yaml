@@ -42,9 +42,10 @@
     - condition: state
       entity_id: media_player.spotify_gramatus
       state: idle
-  - service: media_player.media_pause
-    target:
+  - target:
       entity_id: media_player.spotify_gramatus
+    action: media_player.media_pause
+    data: {}
   mode: restart
 - id: '1629177948654'
   alias: 'Vekking: alarmtid, men tidligst 30min før soloppgang'
@@ -75,7 +76,7 @@
       - condition: state
         entity_id: input_boolean.open_blinds_always
         state: 'on'
-  action:
+  actions:
   - device_id: f1b95e9bf965bb365b1cf27098557194
     domain: cover
     entity_id: cover.tradfri_blind
@@ -85,12 +86,12 @@
 - id: '1630784406319'
   alias: 'Vekking: på alarmtid (lyd)'
   description: ''
-  trigger:
-  - platform: template
-    value_template: '{{ now().timestamp() | timestamp_custom(''%H:%M'', true) == (state_attr(''input_datetime.vekking'',
+  triggers:
+  - value_template: '{{ now().timestamp() | timestamp_custom(''%H:%M'', true) == (state_attr(''input_datetime.vekking'',
       ''timestamp'') + state_attr(''input_datetime.wakeup_music_delay'',''timestamp''))
       | timestamp_custom(''%H:%M'', false)}}'
-  condition:
+    trigger: template
+  conditions:
   - condition: and
     conditions:
     - condition: state
@@ -105,11 +106,11 @@
     - condition: state
       entity_id: input_boolean.vekking_pagar
       state: 'on'
-  action:
-  - service: pyscript.wakeup_alarm
-    data: {}
-  - service: pyscript.ensure_alarm_active
-    data: {}
+  actions:
+  - data: {}
+    action: pyscript.wakeup_alarm
+  - data: {}
+    action: pyscript.ensure_alarm_active
   mode: restart
 - id: '1631038106031'
   alias: 'Vekking: restart hvis musikken ikke er på'
@@ -142,8 +143,8 @@
       ''timestamp'') + state_attr(''input_datetime.wakeup_music_delay'',''timestamp''))
       | timestamp_custom(''%H:%M'', false)}}'
   action:
-  - service: pyscript.wakeup_alarm
-    data: {}
+  - data: {}
+    action: pyscript.wakeup_alarm
   mode: restart
 - id: '1631378585687'
   alias: 'Lysfade: Hoved - neste fade'
@@ -206,7 +207,7 @@
     id: backup
   condition: []
   action:
-  - service: pyscript.toggle_thermostat
+  - action: pyscript.toggle_thermostat
     data:
       thermostat: pyscript.thermostat_kontor
   mode: single
@@ -375,21 +376,21 @@
 - id: '1632041943235'
   alias: 'Vekking: på lysalarmtid (alltid)'
   description: ''
-  trigger:
-  - platform: template
-    value_template: '{{ now().timestamp() | timestamp_custom(''%H:%M'', true) == (state_attr(''input_datetime.vekking'',
+  triggers:
+  - value_template: '{{ now().timestamp() | timestamp_custom(''%H:%M'', true) == (state_attr(''input_datetime.vekking'',
       ''timestamp'') + state_attr(''input_datetime.wakeup_lightfade_delay'',''timestamp''))
       | timestamp_custom(''%H:%M'', false)}}'
-  condition:
+    trigger: template
+  conditions:
   - condition: state
     entity_id: input_boolean.alarm_aktiv
     state: 'on'
   - condition: state
     entity_id: input_boolean.bortreist
     state: 'off'
-  action:
-  - service: pyscript.wakeup_fully
-    data: {}
+  actions:
+  - data: {}
+    action: pyscript.wakeup_fully
   mode: restart
 - id: '1632042306713'
   alias: 'Fjernkontroll: Reagere på knapp'
@@ -523,7 +524,7 @@
     event_type: hue_event
   condition: []
   action:
-  - service: pyscript.hue_event_trigger
+  - action: pyscript.hue_event_trigger
     data:
       trigger: '{{ trigger }}'
   mode: parallel
@@ -549,7 +550,7 @@
     to: 'off'
   condition: []
   action:
-  - service: pyscript.turn_off_ikea_lights_when_room_turned_off
+  - action: pyscript.turn_off_ikea_lights_when_room_turned_off
     data:
       trigger: '{{ trigger }}
 
@@ -595,7 +596,7 @@
     id: backup
   condition: []
   action:
-  - service: pyscript.toggle_thermostat
+  - action: pyscript.toggle_thermostat
     data:
       thermostat: pyscript.thermostat_kjokken
   mode: single
@@ -629,17 +630,17 @@
 - id: '1669489259971'
   alias: Skru av varme soverom 18:00
   description: ''
-  trigger:
-  - platform: time
-    at: '18:00:00'
-  condition:
+  triggers:
+  - at: '18:00:00'
+    trigger: time
+  conditions:
   - condition: state
     entity_id: climate.soverom
     state: heat
   - condition: state
     entity_id: input_boolean.bortreist
     state: 'off'
-  action:
+  actions:
   - device_id: 5dd8331be1641f1686ee64dccae75491
     domain: climate
     entity_id: climate.soverom
@@ -649,24 +650,25 @@
 - id: '1720342343896'
   alias: Start kjøling soverom 17:00
   description: ''
-  trigger:
-  - platform: time
-    at: '17:00:00'
-  condition:
+  triggers:
+  - at: '17:00:00'
+    trigger: time
+  conditions:
   - condition: state
     entity_id: climate.soverom
     state: heat
   - condition: state
     entity_id: input_boolean.bortreist
     state: 'off'
-  action:
-  - service: climate.set_temperature
-    metadata: {}
+  actions:
+  - metadata: {}
     data:
       temperature: 16
       hvac_mode: cool
     target:
       device_id: 5dd8331be1641f1686ee64dccae75491
+    action: climate.set_temperature
+  mode: single
 - id: '1758304719424'
   alias: Skru opp temperaturen når jeg ikke lenger er bortreist
   description: ''
