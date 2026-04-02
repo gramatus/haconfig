@@ -12,9 +12,11 @@ www/**/*
 !www/community/gramatus
 !www/community/gramatus/**/*.*
 .HA_VERSION
+.ha_run.lock
 harmony*.conf
 *.log
 *.log.1
+*.log.old
 *.log.fault
 custom_components/hacs
 custom_components/pyscript/*
@@ -33,3 +35,4 @@ backup/
 backup-test/
 backup-move/
 notes/downloaded/
+.cache/
