@@ -72,6 +72,7 @@ logger:
     homeassistant.components.cast: warn
     homeassistant.components.cast.media_player: warn
     custom_components.spotcast: info
+    # spotipy: info
     custom_components.harmony: info
     coap: warn
     homeassistant.components.auth: debug
@@ -128,6 +129,13 @@ logger:
       - "websocket_api script: Executing step call service"
     roborock.code_mappings:
       - "Missing .* - defaulting to "
+    homeassistant.components.binary_sensor:
+      - "Platform sensibo does not generate unique IDs."
+    homeassistant.components.sensor:
+      - "Platform sensibo does not generate unique IDs."
+    # HA started logging every 80 seconds for integrations that are not ready - some of these may be down and thus filling the logs a lot! No need to put this into home-assistant.log
+    homeassistant.config_entries:
+      - "not ready yet"
     # Invalid logins shows up without acutally there being a problem. Remove from log if we have sufficient reason to believe this is an error.
     # Login from localhost is probably nabu casa
     #homeassistant.components.http.ban:
