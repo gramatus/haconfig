@@ -13,24 +13,30 @@
 - id: '1629057762940'
   alias: 'Vekking: 30min før alarmtid (forberede vekking)'
   description: ''
-  trigger:
-  - platform: template
-    value_template: '{{ now().timestamp() | timestamp_custom(''%H:%M'', true) == (state_attr(''input_datetime.vekking'',
+  triggers:
+  - value_template: '{{ now().timestamp() | timestamp_custom(''%H:%M'', true) == (state_attr(''input_datetime.vekking'',
       ''timestamp'') - (30*60)) | timestamp_custom(''%H:%M'', false)}}'
-  condition:
+    trigger: template
+  conditions:
   - condition: state
     entity_id: input_boolean.alarm_aktiv
     state: 'on'
-  action:
-  - service: input_boolean.turn_on
-    target:
+  - condition: state
+    entity_id: input_boolean.bortreist
+    state: 'off'
+  actions:
+  - target:
       entity_id: input_boolean.vekking_pagar
-  - service: remote.turn_off
-    target:
+    action: input_boolean.turn_on
+    data: {}
+  - target:
       entity_id: remote.harmony_hub_soverom
-  - service: climate.turn_off
-    target:
+    action: remote.turn_off
+    data: {}
+  - target:
       entity_id: climate.soverom
+    action: climate.turn_off
+    data: {}
   - condition: not
     conditions:
     - condition: state
@@ -43,18 +49,21 @@
 - id: '1629177948654'
   alias: 'Vekking: alarmtid, men tidligst 30min før soloppgang'
   description: ''
-  trigger:
-  - platform: time
-    at: input_datetime.vekking
-  - platform: sun
-    event: sunrise
+  triggers:
+  - at: input_datetime.vekking
+    trigger: time
+  - event: sunrise
     offset: '-25'
-  condition:
+    trigger: sun
+  conditions:
   - condition: and
     conditions:
     - condition: state
       entity_id: input_boolean.alarm_aktiv
       state: 'on'
+    - condition: state
+      entity_id: input_boolean.bortreist
+      state: 'off'
     - condition: time
       after: input_datetime.vekking
       before: 00:00:00
@@ -90,6 +99,9 @@
     - condition: state
       entity_id: input_boolean.alarm_aktiv
       state: 'on'
+    - condition: state
+      entity_id: input_boolean.bortreist
+      state: 'off'
     - condition: state
       entity_id: input_boolean.vekking_pagar
       state: 'on'
@@ -371,6 +383,9 @@
   - condition: state
     entity_id: input_boolean.alarm_aktiv
     state: 'on'
+  - condition: state
+    entity_id: input_boolean.bortreist
+    state: 'off'
   action:
   - service: pyscript.wakeup_fully
     data: {}
@@ -620,6 +635,9 @@
   - condition: state
     entity_id: climate.soverom
     state: heat
+  - condition: state
+    entity_id: input_boolean.bortreist
+    state: 'off'
   action:
   - device_id: 5dd8331be1641f1686ee64dccae75491
     domain: climate
@@ -637,6 +655,9 @@
   - condition: state
     entity_id: climate.soverom
     state: heat
+  - condition: state
+    entity_id: input_boolean.bortreist
+    state: 'off'
   action:
   - service: climate.set_temperature
     metadata: {}
@@ -645,4 +666,113 @@
       hvac_mode: cool
     target:
       device_id: 5dd8331be1641f1686ee64dccae75491
+- id: '1758304719424'
+  alias: Skru opp temperaturen når jeg ikke lenger er bortreist
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.bortreist
+    from: 'on'
+    to: 'off'
+  conditions: []
+  actions:
+  - action: input_number.set_value
+    metadata: {}
+    data:
+      value: 22.5
+    target:
+      entity_id: input_number.termostat_kjokkenet
+  - action: input_number.set_value
+    metadata: {}
+    data:
+      value: 22.5
+    target:
+      entity_id: input_number.termostat_kontoret
+  - if:
+    - condition: template
+      value_template: "{{ (states(\"sensor.gang_nede_temperature\")|float(default=20))
+        <\n     (states(\"input_number.termostat_kjokkenet\")|float(default=20)) }}\n"
+    then:
+    - action: light.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: light.varmeovn_kjokkenet
+  - if:
+    - condition: template
+      value_template: "{{ (states(\"sensor.bad_temperature\")|float(default=20)) <\n
+        \    (states(\"input_number.termostat_kontoret\")|float(default=20)) }}\n"
+    then:
+    - action: light.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: light.varmeovn_kontoret
+  mode: single
+- id: '1758304765752'
+  alias: Skru ned temperaturen når jeg reiser bort
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.bortreist
+    from: 'off'
+    to: 'on'
+  conditions: []
+  actions:
+  - action: input_number.set_value
+    metadata: {}
+    data:
+      value: 15
+    target:
+      entity_id: input_number.termostat_kjokkenet
+  - action: input_number.set_value
+    metadata: {}
+    data:
+      value: 15
+    target:
+      entity_id: input_number.termostat_kontoret
+  - if:
+    - condition: template
+      value_template: "{{ (states(\"sensor.gang_nede_temperature\")|float(default=20))
+        >\n     (states(\"input_number.termostat_kjokkenet\")|float(default=20)) }}\n"
+    then:
+    - action: light.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: light.varmeovn_kjokkenet
+  - if:
+    - condition: template
+      value_template: "{{ (states(\"sensor.bad_temperature\")|float(default=20)) >\n
+        \    (states(\"input_number.termostat_kontoret\")|float(default=20)) }}\n"
+    then:
+    - action: light.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: light.varmeovn_kontoret
+  - action: input_datetime.set_datetime
+    alias: Set returdag til 3 dager frem i tid
+    target:
+      entity_id:
+      - input_datetime.returdag
+    data:
+      datetime: '{{ (now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=3,
+        hours=14, minutes=0)).strftime(''%Y-%m-%d %H:%M:%S'') }}'
+  mode: single
+- id: '1758305399914'
+  alias: Skru av bortreist på returdag
+  description: ''
+  triggers:
+  - trigger: time
+    at: input_datetime.returdag
+  conditions: []
+  actions:
+  - action: input_boolean.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: input_boolean.bortreist
   mode: single
