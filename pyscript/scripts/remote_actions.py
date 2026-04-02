@@ -30,13 +30,14 @@ fields:
         return
     # See harmony_setup.md and remote_actions_state.py for the crazy mappings we are using
     remote_mapping = state.getattr("pyscript.remote_mapping")
-    matches = [remote_mapping[key] for key in remote_mapping if remote_mapping[key]["roku_instance"] == event["source_name"] and remote_mapping[key]["roku_command"] == event["key"]]
+    matches = [remote_mapping[key] for key in remote_mapping if remote_mapping[key]["roku_instance"] == event["source_name"] and remote_mapping[key]["roku_command"].lower() == event["key"].lower()]
+    # log.info(matches)
     if len(matches) == 0:
         return
     action = matches[0]["action"]
     shuffle_type = state.get("input_select.quick_play_shuffle_type")
     if action == None:
-        log.debug("Receieved a keypress that has no action connected to it")
+        log.debug("Receieved a keypress that has no action connected to it: " + str(event["key"]))
         return
     else:
         log.info("Triggered action: " + action)
