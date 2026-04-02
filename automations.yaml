@@ -578,14 +578,14 @@
   description: ''
   trigger:
   - platform: numeric_state
-    entity_id: sensor.kjokkenet_temperature
+    entity_id: sensor.gang_nede_temperature
     above: 0.05
-    value_template: '{{ (states("sensor.kjokkenet_temperature")|float(default=20))
+    value_template: '{{ (states("sensor.gang_nede_temperature")|float(default=20))
       - (states("input_number.termostat_kjokkenet")|float(default=20)) }}'
   - platform: numeric_state
-    entity_id: sensor.kjokkenet_temperature
+    entity_id: sensor.gang_nede_temperature
     below: '-0.05'
-    value_template: '{{ (states("sensor.kjokkenet_temperature")|float(default=20))
+    value_template: '{{ (states("sensor.gang_nede_temperature")|float(default=20))
       - (states("input_number.termostat_kjokkenet")|float(default=20)) }}'
   - platform: time_pattern
     hours: '*'
