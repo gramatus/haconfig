@@ -76,17 +76,25 @@ fields:
         return
     if device == None:
         device = "media_player.godehol"
+    use_spotcast = state.get("input_boolean.use_spotcast") == "on"
+    mass_device = device.replace("media_player.", "media_player.mass_")
+    target_entity = device if use_spotcast else mass_device
+    for _ in range(12):  # wait up to 2 minutes (12 × 10s) for the entity to come online after a restart
+        if state.get(target_entity) not in ("unavailable", "unknown", None):
+            break
+        log.warning("Waiting for %s to become available (%s)...", target_entity, state.get(target_entity))
+        await asyncio.sleep(10)
     player_attr = state.getattr(device)
     log.info("  - Connecting to " + player_attr["friendly_name"] + " on spotcast with volume set to 0")
     spotify_uri = "spotify:playlist:" + playlistid
     if ":" in playlistid:
         spotify_uri = playlistid
-    use_spotcast = state.get("input_boolean.use_spotcast") == "on"
     log.info("Using spotcast: " + str(use_spotcast))
-    mass_device = device.replace("media_player.","media_player.mass_")
     if use_spotcast:
-        spotcast.start(entity_id=device, uri=spotify_uri, start_volume=0)
+        # spotcast.start(entity_id=device, uri=spotify_uri, start_volume=0)
+        spotcast.play_media(media_player={ "entity_id": device }, spotify_uri=spotify_uri, data={ "volume" : 0 })
     else:
+        media_player.turn_on(entity_id=mass_device)
         media_player.volume_set(entity_id=mass_device, volume_level=0)
         media_player.play_media(entity_id=mass_device, media_content_id=spotify_uri, media_content_type="music")
     source_playlistid = playlistid
