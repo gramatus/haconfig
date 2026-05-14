@@ -535,4 +535,4 @@ def update_room_entities():
         })
     _LOGGER.info("Finished updating room entities")
 
-pyscript.update_room_entities()
+update_room_entities()

@@ -101,7 +101,7 @@ def trigger_for_room_if_active_ikea(dataset, room:str, elapsed_time:int=0, curre
     fadeend_entity = room_prefix + room_key + "_fadeend"
     # endtime = datetime.datetime.strptime(endtimevalue, "%Y-%m-%dT%H:%M:%S.%f%z")
     # fadeend = datetime.datetime.strptime(state.getattr(fadeend_entity)["end_time"], "%Y-%m-%dT%H:%M:%S.%f")
-    fading = state.get(fadeend_entity) == "active"
+    fading = state.exist(fadeend_entity) and state.get(fadeend_entity) == "active"
     # This expects this to always run AFTER other code that ensures this has a value. Normally that is how it works.
     roomsettings = state.getattr("pyscript.transtools_settings")[room_key]
     lights_on = state.get(room) == "on"
