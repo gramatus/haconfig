@@ -138,6 +138,10 @@ logger:
       - "not ready yet"
     aioharmony.harmonyclient:
       - "Timeout trying to retrieve current activity"
+    homeassistant.components.fully_kiosk:
+      - "not ready yet"
+    homeassistant.components.androidtv_remote:
+      - "not ready yet"
     # Invalid logins shows up without acutally there being a problem. Remove from log if we have sufficient reason to believe this is an error.
     # Login from localhost is probably nabu casa
     #homeassistant.components.http.ban:
