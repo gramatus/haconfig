@@ -136,6 +136,8 @@ logger:
     # HA started logging every 80 seconds for integrations that are not ready - some of these may be down and thus filling the logs a lot! No need to put this into home-assistant.log
     homeassistant.config_entries:
       - "not ready yet"
+    aioharmony.harmonyclient:
+      - "Timeout trying to retrieve current activity"
     # Invalid logins shows up without acutally there being a problem. Remove from log if we have sufficient reason to believe this is an error.
     # Login from localhost is probably nabu casa
     #homeassistant.components.http.ban:
