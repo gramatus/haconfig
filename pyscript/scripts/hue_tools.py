@@ -1,4 +1,3 @@
-import aiohue
 import logging
 import async_timeout
 from homeassistant.helpers import aiohttp_client,entity_registry
@@ -316,6 +315,7 @@ fields:
                 state.set(scene_entity,value = "on")
 
 async def get_bridge():
+    import aiohue
     bridge = aiohue.HueBridgeV1(
         pyscript.config["hue_ip"],
         app_key=pyscript.config["hue_user"],
