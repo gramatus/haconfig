@@ -12,6 +12,7 @@ from homeassistant.helpers.config_entry_oauth2_flow import (
     async_get_config_entry_implementation,
 )
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from aiohttp import ClientError, ClientResponseError
 
 from .const import DOMAIN, SPOTIFY_SCOPES
 from .helpers import get_spotify_install_status
@@ -28,7 +29,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         await session.async_ensure_token_valid()
-    except aiohttp.ClientError as err:
+    except ClientResponseError as err:
+        # 400/401 from Spotify's /api/token means the refresh_token is dead
+        # (revoked, expired, or app credentials changed). Trigger reauth so
+        # HA raises a Repair, instead of silently retrying forever.
+        if err.status in (400, 401):
+            raise ConfigEntryAuthFailed from err
+        raise ConfigEntryNotReady from err
+    except ClientError as err:
         raise ConfigEntryNotReady from err
 
     # spotify = Spotify(auth=session.token["access_token"])

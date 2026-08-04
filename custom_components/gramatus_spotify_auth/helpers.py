@@ -12,7 +12,10 @@ def get_spotify_install_status(hass):
     platform_count = len(platforms)
 
     if platform_count == 0:
-        _LOGGER.error("%s integration not found", platform_string)
+        # Expected during boot: setup() runs before the spotify platform is
+        # ready. See issue #258 — we can't abort setup because of the race,
+        # so this is informational only, not an error.
+        _LOGGER.debug("%s integration not found", platform_string)
     else:
         _LOGGER.debug("%s integration found", platform_string)
 
