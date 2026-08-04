@@ -9,6 +9,7 @@ import urllib
 import database_services
 import math
 import asyncio
+from homeassistant.exceptions import HomeAssistantError
 
 _LOGGER = logging.getLogger(__name__)
 
