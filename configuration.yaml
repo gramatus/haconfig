@@ -11,8 +11,17 @@ http:
   #cors_allowed_origins:
   #  - https://google.com
   #  - https://www.home-assistant.io
-  ip_ban_enabled: true
-  login_attempts_threshold: 10
+  # Deliberately disabled. All Nabu Casa remote traffic arrives from 127.0.0.1 via the
+  # SniTun tunnel, so a ban triggered by an internet scanner bans the tunnel itself and
+  # kills ALL remote access until ip_bans.yaml is deleted by hand. Nabu Casa: "the remote
+  # connection will be banned as a whole" —
+  # https://support.nabucasa.com/hc/en-us/articles/26523862491165-Remote-access-Limitations
+  # Trusting X-Forwarded-For cannot recover the real client IP either (and would let
+  # clients spoof it): the tunnel carries no X-Forwarded-* headers, since TLS terminates
+  # locally. See "Reverse proxies" — https://www.home-assistant.io/integrations/http/
+  # Brute force is covered by bcrypt + TOTP (homeassistant.auth_mfa_modules above).
+  ip_ban_enabled: false
+  #login_attempts_threshold: 10  # only has an effect while ip_ban_enabled is true
 
 # Text to speech
 tts:
